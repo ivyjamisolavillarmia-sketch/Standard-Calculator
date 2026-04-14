@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Standard Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sg-50: #f2f7f2;
+    --sg-100: #deeede;
+    --sg-200: #bdd9bc;
+    --sg-300: #8cbc8a;
+    --sg-400: #6aa668;
+    --sg-500: #4e8a4c;
+    --sg-600: #3a6e38;
+    --sg-700: #2b5229;
+    --glass-bg: rgba(242, 247, 242, 0.62);
+    --glass-border: rgba(140, 188, 138, 0.4);
+    --shadow-deep: 0 20px 60px rgba(58, 110, 56, 0.22);
+    --btn-radius: 14px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #dff0de 0%, #eef6ee 30%, #d9edd8 60%, #c8e3c6 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Sans', sans-serif;
+    overflow: hidden;
+    position: relative;
+  }
+  body::before, body::after {
+    content: '';
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.35;
+    pointer-events: none;
+  }
+  body::before {
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, #8cbc8a, #6aa668);
+    top: -100px; left: -100px;
+    animation: floatOrb 8s ease-in-out infinite alternate;
+  }
+  body::after {
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, #bdd9bc, #8cbc8a);
+    bottom: -80px; right: -80px;
+    animation: floatOrb 10s ease-in-out infinite alternate-reverse;
+  }
+  @keyframes floatOrb {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(30px, 30px) scale(1.1); }
+  }
+  .calc-wrapper {
+    position: relative;
+    z-index: 10;
+    animation: fadeSlideIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(30px) scale(0.95); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .calculator {
+    width: 340px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    padding: 24px 20px 20px;
+    box-shadow: var(--shadow-deep), inset 0 1px 0 rgba(255,255,255,0.8);
+  }
+  .title-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding: 0 2px;
+  }
+  .title-bar span {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 14px;
+    color: var(--sg-600);
+    letter-spacing: 0.02em;
+  }
+  .dots { display: flex; gap: 6px; }
+  .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--sg-300);
+    transition: background 0.2s;
+  }
+  .dot:hover { background: var(--sg-500); }
+  .display {
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 14px 18px 10px;
+    margin-bottom: 18px;
+    min-height: 90px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: flex-end;
+    backdrop-filter: blur(10px);
+    box-shadow: inset 0 2px 8px rgba(78, 138, 76, 0.08);
+  }
+  .display .expr {
+    font-size: 13px;
+    color: var(--sg-400);
+    font-weight: 400;
+    min-height: 20px;
+    letter-spacing: 0.03em;
+    word-break: break-all;
+  }
+  .display .result {
+    font-size: 40px;
+    font-weight: 300;
+    color: #1b3d1a;
+    letter-spacing: -1px;
+    line-height: 1.1;
+    word-break: break-all;
+  }
+  .buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  .btn {
+    height: 60px;
+    border: 1px solid rgba(140, 188, 138, 0.3);
+    border-radius: var(--btn-radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    position: relative;
+    overflow: hidden;
+    outline: none;
+    letter-spacing: 0.01em;
+  }
+  .btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0);
+    transition: background 0.12s;
+    border-radius: inherit;
+  }
+  .btn:hover::after { background: rgba(255,255,255,0.28); }
+  .btn:active { transform: scale(0.95); }
+  .btn-num {
+    background: rgba(255, 255, 255, 0.65);
+    color: #1b3d1a;
+    box-shadow: 0 2px 8px rgba(78, 138, 76, 0.08);
+  }
+  .btn-num:hover { box-shadow: 0 4px 16px rgba(78, 138, 76, 0.18); }
+  .btn-op {
+    background: linear-gradient(145deg, rgba(140, 188, 138, 0.55), rgba(106, 166, 104, 0.4));
+    color: var(--sg-700);
+    box-shadow: 0 2px 10px rgba(78, 138, 76, 0.12);
+  }
+  .btn-op:hover { box-shadow: 0 4px 18px rgba(78, 138, 76, 0.25); }
+  .btn-fn {
+    background: linear-gradient(145deg, rgba(189, 217, 188, 0.6), rgba(140, 188, 138, 0.45));
+    color: var(--sg-600);
+    font-size: 14px;
+    box-shadow: 0 2px 8px rgba(78, 138, 76, 0.1);
+  }
+  .btn-fn:hover { box-shadow: 0 4px 16px rgba(78, 138, 76, 0.2); }
+  .btn-eq {
+    background: linear-gradient(145deg, var(--sg-500), var(--sg-600));
+    color: #fff;
+    font-size: 22px;
+    box-shadow: 0 4px 18px rgba(58, 110, 56, 0.4);
+  }
+  .btn-eq:hover { box-shadow: 0 6px 24px rgba(58, 110, 56, 0.55); }
+  .btn-a, .btn-b {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+  }
+  .btn-a {
+    background: linear-gradient(145deg, #e8f5e7, #d2ead1);
+    color: var(--sg-700);
+    border-color: rgba(106, 166, 104, 0.4);
+    box-shadow: 0 2px 10px rgba(78, 138, 76, 0.15);
+  }
+  .btn-a:hover { box-shadow: 0 4px 18px rgba(78, 138, 76, 0.3); }
+  .btn-b {
+    background: linear-gradient(145deg, #deeede, #c8e3c6);
+    color: var(--sg-700);
+    border-color: rgba(106, 166, 104, 0.4);
+    box-shadow: 0 2px 10px rgba(78, 138, 76, 0.15);
+  }
+  .btn-b:hover { box-shadow: 0 4px 18px rgba(78, 138, 76, 0.3); }
+  .span2 { grid-column: span 2; }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(20, 60, 20, 0.3);
+    backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+  .modal-overlay.active { opacity: 1; pointer-events: all; }
+  .modal {
+    background: rgba(245, 252, 245, 0.92);
+    backdrop-filter: blur(30px);
+    border: 1px solid var(--glass-border);
+    border-radius: 22px;
+    padding: 32px 28px;
+    width: 300px;
+    box-shadow: 0 24px 80px rgba(43, 82, 41, 0.28);
+    transform: scale(0.9) translateY(20px);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+  }
+  .modal-overlay.active .modal { transform: scale(1) translateY(0); }
+  .modal-icon {
+    width: 52px; height: 52px;
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    margin: 0 auto 16px;
+  }
+  .modal-icon.dev { background: linear-gradient(135deg, #d2ead1, #8cbc8a); }
+  .modal-icon.app { background: linear-gradient(135deg, #bdd9bc, #6aa668); color: #fff; }
+  .modal-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 500;
+    color: #1b3d1a;
+    text-align: center;
+    margin-bottom: 18px;
+  }
+  .modal-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 11px;
+    padding: 10px 12px;
+    background: rgba(222, 238, 222, 0.55);
+    border-radius: 10px;
+    border: 1px solid rgba(140, 188, 138, 0.25);
+  }
+  .modal-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--sg-500);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+    margin-top: 1px;
+    min-width: 68px;
+  }
+  .modal-value {
+    font-size: 13px;
+    color: #1b3d1a;
+    font-weight: 500;
+    word-break: break-word;
+    line-height: 1.4;
+  }
+  .modal-desc {
+    font-size: 13px;
+    color: #3a5e39;
+    line-height: 1.7;
+    margin-bottom: 6px;
+  }
+  .modal-close {
+    display: block;
+    width: 100%;
+    margin-top: 18px;
+    padding: 12px;
+    background: linear-gradient(135deg, var(--sg-500), var(--sg-600));
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    box-shadow: 0 4px 14px rgba(78, 138, 76, 0.4);
+    letter-spacing: 0.04em;
+  }
+  .modal-close:hover { box-shadow: 0 6px 20px rgba(78, 138, 76, 0.55); transform: translateY(-1px); }
+  .modal-close:active { transform: translateY(0); }
+  .github-link {
+    font-size: 12px;
+    color: var(--sg-500);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .github-link:hover { color: var(--sg-700); }
+</style>
+</head>
+<body>
+
+<!-- MODAL A -->
+<div class="modal-overlay" id="modal-a" onclick="closeModal('modal-a')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-icon dev">🌿</div>
+    <div class="modal-title">Developer Info</div>
+    <div class="modal-row">
+      <span class="modal-label">Name</span>
+      <span class="modal-value">Ivy Villarmia</span>
+    </div>
+    <div class="modal-row">
+      <span class="modal-label">Course</span>
+      <span class="modal-value">BSIT — 1st Year</span>
+    </div>
+    <div class="modal-row">
+      <span class="modal-label">School Year</span>
+      <span class="modal-value">2025 – 2026</span>
+    </div>
+    <div class="modal-row">
+      <span class="modal-label">GitHub</span>
+      <span class="modal-value">
+        <a class="github-link" href="https://github.com/ivyjamisolavillarmia-sketch" target="_blank">
+          ⎈ ivyjamisolavillarmia-sketch
+        </a>
+      </span>
+    </div>
+    <button class="modal-close" onclick="closeModal('modal-a')">Close</button>
+  </div>
+</div>
+
+<!-- MODAL B -->
+<div class="modal-overlay" id="modal-b" onclick="closeModal('modal-b')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-icon app">🔢</div>
+    <div class="modal-title">About This App</div>
+    <div class="modal-row">
+      <span class="modal-label">App Name</span>
+      <span class="modal-value">Standard Calculator</span>
+    </div>
+    <div class="modal-row">
+      <span class="modal-label">Version</span>
+      <span class="modal-value">1.0.0</span>
+    </div>
+    <div class="modal-row">
+      <span class="modal-label">Type</span>
+      <span class="modal-value">Web-based Calculator</span>
+    </div>
+    <div class="modal-row">
+      <span class="modal-label">Built With</span>
+      <span class="modal-value">HTML · CSS · JavaScript</span>
+    </div>
+    <div style="margin-top:14px">
+      <p class="modal-desc">
+        A Windows-style standard calculator featuring arithmetic operations (add, subtract, multiply, divide), percentage, sign toggle, and decimal input — wrapped in a soft sage green aesthetic.
+      </p>
+    </div>
+    <button class="modal-close" onclick="closeModal('modal-b')">Close</button>
+  </div>
+</div>
+
+<!-- CALCULATOR -->
+<div class="calc-wrapper">
+  <div class="calculator">
+    <div class="title-bar">
+      <span>Calculator</span>
+      <div class="dots">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+    </div>
+
+    <div class="display">
+      <div class="expr" id="expr"></div>
+      <div class="result" id="result">0</div>
+    </div>
+
+    <div class="buttons">
+      <!-- Row 1 -->
+      <button class="btn btn-fn" onclick="calcFn('%')">%</button>
+      <button class="btn btn-fn" onclick="calcFn('CE')">CE</button>
+      <button class="btn btn-fn" onclick="calcFn('C')">C</button>
+      <button class="btn btn-fn" onclick="calcFn('BS')">⌫</button>
+
+      <!-- Row 2 -->
+      <button class="btn btn-fn" onclick="calcFn('1/x')">¹⁄ₓ</button>
+      <button class="btn btn-fn" onclick="calcFn('x2')">x²</button>
+      <button class="btn btn-fn" onclick="calcFn('sqrt')">√</button>
+      <button class="btn btn-op" onclick="calcOp('/')">÷</button>
+
+      <!-- Row 3 -->
+      <button class="btn btn-num" onclick="inputDigit('7')">7</button>
+      <button class="btn btn-num" onclick="inputDigit('8')">8</button>
+      <button class="btn btn-num" onclick="inputDigit('9')">9</button>
+      <button class="btn btn-op" onclick="calcOp('*')">×</button>
+
+      <!-- Row 4 -->
+      <button class="btn btn-num" onclick="inputDigit('4')">4</button>
+      <button class="btn btn-num" onclick="inputDigit('5')">5</button>
+      <button class="btn btn-num" onclick="inputDigit('6')">6</button>
+      <button class="btn btn-op" onclick="calcOp('-')">−</button>
+
+      <!-- Row 5 -->
+      <button class="btn btn-num" onclick="inputDigit('1')">1</button>
+      <button class="btn btn-num" onclick="inputDigit('2')">2</button>
+      <button class="btn btn-num" onclick="inputDigit('3')">3</button>
+      <button class="btn btn-op" onclick="calcOp('+')">+</button>
+
+      <!-- Row 6 -->
+      <button class="btn btn-fn" onclick="calcFn('+/-')">⁺∕₋</button>
+      <button class="btn btn-num" onclick="inputDigit('0')">0</button>
+      <button class="btn btn-num" onclick="inputDot()">.</button>
+      <button class="btn btn-eq" onclick="calcEqual()">=</button>
+
+      <!-- Row 7: A & B -->
+      <button class="btn btn-a span2" onclick="pressAB('A')">A</button>
+      <button class="btn btn-b span2" onclick="pressAB('B')">B</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let current = '0';
+  let prevValue = null;
+  let operator = null;
+  let justEvaled = false;
+  let exprStr = '';
+
+  const resultEl = document.getElementById('result');
+  const exprEl   = document.getElementById('expr');
+
+  function updateDisplay() {
+    resultEl.textContent = current.length > 12
+      ? parseFloat(current).toExponential(6)
+      : current;
+    exprEl.textContent = exprStr;
+  }
+
+  function inputDigit(d) {
+    if (justEvaled) { current = d; exprStr = ''; justEvaled = false; }
+    else current = current === '0' ? d : current + d;
+    updateDisplay();
+  }
+
+  function inputDot() {
+    if (justEvaled) { current = '0.'; exprStr = ''; justEvaled = false; }
+    else if (!current.includes('.')) current += '.';
+    updateDisplay();
+  }
+
+  function calcOp(op) {
+    justEvaled = false;
+    if (operator && prevValue !== null) {
+      const val = compute(parseFloat(prevValue), parseFloat(current), operator);
+      current = formatNum(val);
+    }
+    prevValue = current;
+    operator = op;
+    const sym = { '+': '+', '-': '−', '*': '×', '/': '÷' }[op];
+    exprStr = current + ' ' + sym;
+    current = '0';
+    updateDisplay();
+  }
+
+  function calcEqual() {
+    if (operator === null || prevValue === null) return;
+    const a = parseFloat(prevValue), b = parseFloat(current);
+    const sym = { '+': '+', '-': '−', '*': '×', '/': '÷' }[operator];
+    exprStr = prevValue + ' ' + sym + ' ' + current + ' =';
+    const val = compute(a, b, operator);
+    current = formatNum(val);
+    operator = null; prevValue = null; justEvaled = true;
+    updateDisplay();
+  }
+
+  function compute(a, b, op) {
+    switch(op) {
+      case '+': return a + b;
+      case '-': return a - b;
+      case '*': return a * b;
+      case '/': return b === 0 ? NaN : a / b;
+    }
+  }
+
+  function formatNum(v) {
+    if (isNaN(v)) return 'Error';
+    if (!isFinite(v)) return 'Error';
+    return parseFloat(v.toPrecision(12)).toString();
+  }
+
+  function calcFn(fn) {
+    const v = parseFloat(current);
+    switch(fn) {
+      case 'C':   current = '0'; prevValue = null; operator = null; exprStr = ''; break;
+      case 'CE':  current = '0'; break;
+      case 'BS':
+        if (current.length > 1) current = current.slice(0, -1);
+        else current = '0'; break;
+      case '%':
+        current = formatNum(v / 100); break;
+      case '+/-':
+        current = formatNum(-v); break;
+      case '1/x':
+        exprStr = '1/(' + current + ')';
+        current = v === 0 ? 'Error' : formatNum(1 / v); break;
+      case 'x2':
+        exprStr = 'sqr(' + current + ')';
+        current = formatNum(v * v); break;
+      case 'sqrt':
+        exprStr = '√(' + current + ')';
+        current = v < 0 ? 'Error' : formatNum(Math.sqrt(v)); break;
+    }
+    justEvaled = true;
+    updateDisplay();
+  }
+
+  function pressAB(label) {
+    exprStr = '';
+    current = label;
+    justEvaled = true;
+    updateDisplay();
+    if (label === 'A') openModal('modal-a');
+    else openModal('modal-b');
+  }
+
+  function openModal(id) {
+    document.getElementById(id).classList.add('active');
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+    current = '0';
+    exprStr = '';
+    updateDisplay();
+  }
+
+  // Keyboard support
+  document.addEventListener('keydown', e => {
+    if (e.key >= '0' && e.key <= '9') inputDigit(e.key);
+    else if (e.key === '.') inputDot();
+    else if (e.key === '+') calcOp('+');
+    else if (e.key === '-') calcOp('-');
+    else if (e.key === '*') calcOp('*');
+    else if (e.key === '/') { e.preventDefault(); calcOp('/'); }
+    else if (e.key === 'Enter' || e.key === '=') calcEqual();
+    else if (e.key === 'Backspace') calcFn('BS');
+    else if (e.key === 'Escape') calcFn('C');
+    else if (e.key === '%') calcFn('%');
+  });
+</script>
+</body>
+</html>
